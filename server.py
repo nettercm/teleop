@@ -5,6 +5,9 @@ from flask import Flask
 from flask import render_template
 from flask import redirect
 from subprocess import call
+from werkzeug.serving import WSGIRequestHandler
+
+
 app = Flask(__name__)
 app.debug = True
 
@@ -17,6 +20,10 @@ led0_state = False
 led1_state = False
 led2_state = False
 
+battery_millivolts = [8000]
+
+a_star.play_notes("l32cde")
+
 @app.route("/")
 def hello():
     return render_template("index.html")
@@ -25,7 +32,8 @@ def hello():
 def status():
     buttons = a_star.read_buttons()
     analog = a_star.read_analog()
-    battery_millivolts = a_star.read_battery_millivolts()
+    b = a_star.read_battery_millivolts()
+    battery_millivolts[0] = int((battery_millivolts[0]*7 + b[0])/8)
     encoders = a_star.read_encoders()
     data = {
         "buttons": buttons,
@@ -37,7 +45,12 @@ def status():
 
 @app.route("/motors/<left>,<right>")
 def motors(left, right):
-    a_star.motors(int(left), int(right))
+    l = int(left)
+    l = int(l/2)
+    r = int(right)
+    r = int(r/2)
+    print(l,r)
+    a_star.motors(l,r)
     return ""
 
 @app.route("/leds/<int:led0>,<int:led1>,<int:led2>")
@@ -74,4 +87,5 @@ def shutting_down():
     return "Shutting down in 2 seconds! You can remove power when the green LED stops flashing."
 
 if __name__ == "__main__":
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"
     app.run(host = "0.0.0.0")
